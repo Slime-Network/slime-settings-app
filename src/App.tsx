@@ -1,13 +1,15 @@
 import CloseIcon from '@mui/icons-material/Close';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import EditIcon from '@mui/icons-material/Edit';
 import InfoIcon from '@mui/icons-material/Info';
-import { Box, Button, CircularProgress, Grid, IconButton, Modal, Paper, Stack, TextField, Typography } from "@mui/material";
+import { Box, Button, Chip, CircularProgress, Grid, IconButton, Modal, Paper, Stack, TextField, Typography } from "@mui/material";
 import React from "react";
 
 import { MainTopBar } from "./components/MainTopBar";
 import { ProfileEditPage, ProfileEditPageProps } from "./gosti-shared/components/ProfileEditPage";
 import { infoModalStyle } from "./gosti-shared/constants";
 import { SocialLink } from './gosti-shared/constants/social-links';
+import { useGostiApi } from './gosti-shared/contexts/GostiApiContext';
 import { useWalletConnect } from "./gosti-shared/contexts/WalletConnectContext";
 import { useWalletConnectRpc } from "./gosti-shared/contexts/WalletConnectRpcContext";
 import { Profile } from "./gosti-shared/types/gosti/Profile";
@@ -18,6 +20,7 @@ import { GetDIDRequest, GetDIDResponse } from './gosti-shared/types/walletconnec
 import { GetDIDInfoRequest, GetDIDInfoResponse } from './gosti-shared/types/walletconnect/rpc/GetDIDInfo';
 import { GetWalletsRequest } from "./gosti-shared/types/walletconnect/rpc/GetWallets";
 import { SetDIDNameRequest } from './gosti-shared/types/walletconnect/rpc/SetDIDName';
+import { SignMessageByIdRequest } from './gosti-shared/types/walletconnect/rpc/SignMessageById';
 import { UpdateDIDMetadataRequest, UpdateDIDMetadataResponse } from './gosti-shared/types/walletconnect/rpc/UpdateDIDMetadata';
 
 export const App = () => {
@@ -29,10 +32,12 @@ export const App = () => {
 		updateDIDMetadata,
 		setDIDName,
 		createNewDIDWallet,
+		signMessageById,
 	} = useWalletConnectRpc();
 
-	const { client, session, pairings, connect, disconnect } =
-		useWalletConnect();
+	const { client, session, pairings, connect, disconnect } = useWalletConnect();
+
+	const { gostiConfig, setGostiConfig } = useGostiApi();
 
 	const [profiles, setProfiles] = React.useState<Profile[]>([]);
 	const [activeProfile, setActiveProfile] = React.useState<Profile | undefined>(undefined);
@@ -211,10 +216,19 @@ export const App = () => {
 									<Grid container>
 										<Grid item xs={12}>
 											<Typography variant="h6" component="h2">
-												{profile.name}
+												{profile.name} <Chip size="small" label={gostiConfig.identity.activeDID === profile.did ? "Active" : "Activate"} color={gostiConfig.identity.activeDID === profile.did ? "primary" : "default"}
+													onClick={async () => {
+														gostiConfig.identity.activeDID = profile.did;
+														gostiConfig.identity.currentNostrPublicKey = profile.metadata.gostiActiveNostrPublicKey || "";
+														const resp2 = await signMessageById({ id: profile.did, message: gostiConfig.identity.currentNostrPublicKey } as SignMessageByIdRequest);
+														gostiConfig.identity.proof = resp2.signature;
+														await setGostiConfig({ ...gostiConfig });
+													}} />
 											</Typography>
 											<Typography variant="body2" component="p">
-												{profile.did}
+												{profile.did.slice(0, 13)}...{profile.did.slice(64, profile.did.length)} <IconButton size="small" aria-label="info" onClick={() => {
+													navigator.clipboard.writeText(profile.did);
+												}}><ContentCopyIcon /></IconButton>
 											</Typography>
 										</Grid>
 										<Grid item xs={4}>
@@ -237,29 +251,31 @@ export const App = () => {
 									</Grid>
 								</Grid>
 								<Grid item xs={1}>
-									{profile.coinAvailable ? "" : <IconButton
-										size="small"
-										edge="end"
-										aria-label=""
-										aria-haspopup="true"
-										color="inherit"
-										onClick={
-											async () => {
-												// const result = await deleteUnconfirmedTransactions({ amount: 1, backupDids: [], numOfBackupIdsNeeded: 1, fee } as CreateNewDIDWalletRequest);
+									{profile.coinAvailable ? "" : <Box>
+										Update in Progress...
+										<IconButton
+											size="small"
+											edge="end"
+											aria-label=""
+											aria-haspopup="true"
+											color="inherit"
+											onClick={
+												async () => {
+													// const result = await deleteUnconfirmedTransactions({ amount: 1, backupDids: [], numOfBackupIdsNeeded: 1, fee } as CreateNewDIDWalletRequest);
+												}
 											}
-										}
-									>
-										<Box sx={{ m: 1, position: 'relative' }}>
-											Update in Progress...
-											<CloseIcon />
-											<CircularProgress sx={{
-												position: 'absolute',
-												marginTop: '-8px',
-												left: '-8px'
-											}}
-											/>
-										</Box>
-									</IconButton>}
+										>
+											<Box sx={{ m: 1, position: 'relative' }}>
+												<CloseIcon />
+												<CircularProgress sx={{
+													position: 'absolute',
+													marginTop: '-8px',
+													left: '-8px'
+												}}
+												/>
+											</Box>
+										</IconButton>
+									</Box>}
 								</Grid>
 								<Grid item xs={1}>
 									<Button variant="contained" sx={{ width: "100%" }} onClick={() => {
