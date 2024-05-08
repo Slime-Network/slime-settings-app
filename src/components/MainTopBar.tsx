@@ -10,14 +10,13 @@ import { SessionTypes } from '@walletconnect/types';
 import React from 'react';
 
 import WalletConnectMenu from '../gosti-shared/components/WalletConnectMenu';
-import ThemeSwitcher from "./ThemeSwitcher";
+import ThemeSwitcher from './ThemeSwitcher';
 
 export const MainTopBar = (
 	session: SessionTypes.Struct | undefined,
 	connectToWallet: () => void,
-	disconnectFromWallet: () => void,
+	disconnectFromWallet: () => void
 ) => {
-
 	const [anchor2El, setAnchor2El] = React.useState<null | HTMLElement>(null);
 	const isMainMenuOpen = Boolean(anchor2El);
 
@@ -27,7 +26,6 @@ export const MainTopBar = (
 	const handleClose2 = () => {
 		setAnchor2El(null);
 	};
-
 
 	const mainMenuId = 'primary-search-main';
 	const renderMainMenu = (
@@ -65,13 +63,8 @@ export const MainTopBar = (
 					>
 						<MenuIcon />
 					</IconButton>
-					<Typography
-						variant="h6"
-						noWrap
-						component="div"
-						sx={{ display: { xs: 'none', sm: 'block' } }}
-					>
-						Profile
+					<Typography variant="h6" noWrap component="div" sx={{ display: { xs: 'none', sm: 'block' } }}>
+						Settings
 					</Typography>
 					<Box sx={{ flexGrow: 1 }} />
 					<IconButton
@@ -84,9 +77,7 @@ export const MainTopBar = (
 					>
 						<RefreshIcon />
 					</IconButton>
-					<Box sx={{ display: { xs: 'flex' } }}>
-						{WalletConnectMenu(session, connectToWallet, disconnectFromWallet)}
-					</Box>
+					<Box sx={{ display: { xs: 'flex' } }}>{WalletConnectMenu(session, connectToWallet, disconnectFromWallet)}</Box>
 				</Toolbar>
 			</AppBar>
 			{renderMainMenu}
