@@ -1,7 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import EditIcon from '@mui/icons-material/Edit';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import InfoIcon from '@mui/icons-material/Info';
@@ -26,30 +25,33 @@ import {
 import React from 'react';
 
 import { MainTopBar } from './components/MainTopBar';
-import { AddMarketplaceModal } from './gosti-shared/components/AddMarketplaceModal';
-import { AddRelayModal } from './gosti-shared/components/AddRelayModal';
-import { FeeDialogModal } from './gosti-shared/components/FeeDialogModal';
-import { ProfileEditPage } from './gosti-shared/components/ProfileEditPage';
-import { XchDisplay } from './gosti-shared/components/XchDisplay';
-import { infoModalStyle } from './gosti-shared/constants';
-import { SocialLink } from './gosti-shared/constants/social-links';
-import { useGostiApi } from './gosti-shared/contexts/GostiApiContext';
-import { useWalletConnect } from './gosti-shared/contexts/WalletConnectContext';
-import { useWalletConnectRpc } from './gosti-shared/contexts/WalletConnectRpcContext';
-import { Identity } from './gosti-shared/types/gosti/GostiRpcTypes';
-import { Profile } from './gosti-shared/types/gosti/Profile';
-import { WalletType } from './gosti-shared/types/walletconnect/WalletType';
-import { CreateNewDIDWalletRequest } from './gosti-shared/types/walletconnect/rpc/CreateNewDIDWallet';
-import { FindLostDIDResponse } from './gosti-shared/types/walletconnect/rpc/FindLostDID';
-import { GetDIDRequest, GetDIDResponse } from './gosti-shared/types/walletconnect/rpc/GetDID';
-import { GetDIDInfoRequest, GetDIDInfoResponse } from './gosti-shared/types/walletconnect/rpc/GetDIDInfo';
-import { GetWalletBalanceResponse } from './gosti-shared/types/walletconnect/rpc/GetWalletBalance';
-import { GetWalletsRequest, GetWalletsResponse } from './gosti-shared/types/walletconnect/rpc/GetWallets';
-import { SetDIDNameRequest } from './gosti-shared/types/walletconnect/rpc/SetDIDName';
+import { AddMarketplaceModal } from './slime-shared/components/AddMarketplaceModal';
+import { AddRelayModal } from './slime-shared/components/AddRelayModal';
+import { FeeDialogModal } from './slime-shared/components/FeeDialogModal';
+import { MarketplaceDisplay } from './slime-shared/components/MarketplaceDisplay';
+import { NostrRelayDisplay } from './slime-shared/components/NostrRelayDisplay';
+import { ProfileEditPage } from './slime-shared/components/ProfileEditPage';
+import { XchDisplay } from './slime-shared/components/XchDisplay';
+import { infoModalStyle } from './slime-shared/constants';
+import { SocialLink } from './slime-shared/constants/social-links';
+import { useSlimeApi } from './slime-shared/contexts/SlimeApiContext';
+import { useWalletConnect } from './slime-shared/contexts/WalletConnectContext';
+import { useWalletConnectRpc } from './slime-shared/contexts/WalletConnectRpcContext';
+import { Profile } from './slime-shared/types/slime/Profile';
+import { Identity } from './slime-shared/types/slime/SlimeRpcTypes';
+import { WalletType } from './slime-shared/types/walletconnect/WalletType';
+import { CreateNewDIDWalletRequest } from './slime-shared/types/walletconnect/rpc/CreateNewDIDWallet';
+import { FindLostDIDResponse } from './slime-shared/types/walletconnect/rpc/FindLostDID';
+import { GetDIDRequest, GetDIDResponse } from './slime-shared/types/walletconnect/rpc/GetDID';
+import { GetDIDInfoRequest, GetDIDInfoResponse } from './slime-shared/types/walletconnect/rpc/GetDIDInfo';
+import { GetWalletBalanceResponse } from './slime-shared/types/walletconnect/rpc/GetWalletBalance';
+import { GetWalletsRequest, GetWalletsResponse } from './slime-shared/types/walletconnect/rpc/GetWallets';
+import { RequestPermissionsRequest } from './slime-shared/types/walletconnect/rpc/RequestPermissions';
+import { SetDIDNameRequest } from './slime-shared/types/walletconnect/rpc/SetDIDName';
 import {
 	UpdateDIDMetadataRequest,
 	UpdateDIDMetadataResponse,
-} from './gosti-shared/types/walletconnect/rpc/UpdateDIDMetadata';
+} from './slime-shared/types/walletconnect/rpc/UpdateDIDMetadata';
 
 export const App = () => {
 	const {
@@ -61,11 +63,12 @@ export const App = () => {
 		setDIDName,
 		createNewDIDWallet,
 		getWalletBalance,
+		requestPermissions,
 	} = useWalletConnectRpc();
 
 	const { client, session, pairings, connect, disconnect } = useWalletConnect();
 
-	const { gostiConfig, setGostiConfig } = useGostiApi();
+	const { slimeConfig, setSlimeConfig } = useSlimeApi();
 
 	const [profiles, setProfiles] = React.useState<Profile[]>([]);
 	const [activeProfile, setActiveProfile] = React.useState<Profile | undefined>(undefined);
@@ -92,6 +95,10 @@ export const App = () => {
 
 	React.useEffect(() => {
 		const getProfiles = async () => {
+			const permsResp = await requestPermissions({
+				commands: ['getWallets', 'getDID', 'getDIDInfo', 'getWalletBalance'],
+			} as RequestPermissionsRequest);
+			console.log('permsResp', permsResp);
 			if (profiles.length > 0) return;
 			const getWalletsResult: GetWalletsResponse = await getWallets({ includeData: false } as GetWalletsRequest);
 			const profs = [] as Profile[];
@@ -148,15 +155,21 @@ export const App = () => {
 			setLoaded(true);
 			setProfiles(profs);
 
-			gostiConfig.identities = profs.map(
+			if (!slimeConfig) {
+				console.log('No slimeConfig found');
+				alert('No slimeConfig found. Please set up your profile.');
+				return;
+			}
+
+			slimeConfig.identities = profs.map(
 				(p) =>
 					({
 						did: p.did,
-						currentNostrPublicKey: p.metadata.gostiActiveNostrPublicKey,
-						proof: JSON.parse(profs[0].metadata.gostiNostrPublicKeys || '[]').proof,
+						currentNostrPublicKey: p.metadata.slimeActiveNostrPublicKey,
+						proof: JSON.parse(profs[0].metadata.slimeNostrPublicKeys || '[]').proof,
 					} as Identity)
 			);
-			setGostiConfig({ ...gostiConfig });
+			setSlimeConfig({ ...slimeConfig });
 		};
 		document.title = `Your Profiles`;
 		if (session?.acknowledged && !profiles.length && profiles.length <= 0) {
@@ -184,9 +197,14 @@ export const App = () => {
 
 	React.useEffect(() => {
 		console.log('activeProfile', activeProfile);
-		gostiConfig.activeIdentity =
-			gostiConfig.identities.find((i) => i.did === activeProfile?.did) || gostiConfig.activeIdentity;
-		setGostiConfig({ ...gostiConfig });
+		if (!slimeConfig) {
+			console.log('No slimeConfig found');
+			alert('No slimeConfig found. Please set up your profile.');
+			return;
+		}
+		slimeConfig.activeIdentity =
+			slimeConfig.identities.find((i) => i.did === activeProfile?.did) || slimeConfig.activeIdentity;
+		setSlimeConfig({ ...slimeConfig });
 		// eslint-disable-next-line react-hooks/exhaustive-deps -- Because
 	}, [activeProfile]);
 
@@ -203,6 +221,11 @@ export const App = () => {
 
 	const onUpdateMetadata = async (metadata: any) => {
 		if (!activeProfile) throw new Error('No active profile');
+		if (!slimeConfig) {
+			console.log('No slimeConfig found');
+			alert('No slimeConfig found. Please set up your profile.');
+			return;
+		}
 		const resp: UpdateDIDMetadataResponse = await updateDIDMetadata({
 			walletId: activeProfile?.walletId,
 			metadata,
@@ -214,6 +237,7 @@ export const App = () => {
 				`Your profile metadata was updated. It may take a few minutes for the transaction to be confirmed.`
 			);
 			setOpenNotice(true);
+			setSlimeConfig({ ...slimeConfig });
 		} else {
 			setNoticeTitle('Profile Metadata Update Failed');
 			setNoticeMessage(`Your profile metadata update failed.`);
@@ -319,9 +343,10 @@ export const App = () => {
 																<Tooltip title="Activate Profile">
 																	<Chip
 																		size="small"
-																		label={gostiConfig.activeIdentity.did === profile.did ? 'Active' : 'Activate'}
-																		color={gostiConfig.activeIdentity.did === profile.did ? 'primary' : 'default'}
+																		label={slimeConfig?.activeIdentity.did === profile.did ? 'Active' : 'Activate'}
+																		color={slimeConfig?.activeIdentity.did === profile.did ? 'primary' : 'default'}
 																		onClick={() => {
+																			console.log('rgatbhoeahgr', profile);
 																			setActiveProfile(profile);
 																		}}
 																	/>
@@ -345,7 +370,7 @@ export const App = () => {
 														<Grid item xs={4}>
 															<Box sx={{ p: 1, maxHeight: '225px', aspectRatio: '1/1', overflow: 'hidden' }}>
 																<img
-																	src={profile.metadata.gostiAvatar}
+																	src={profile.metadata.slimeAvatar}
 																	style={{ width: '100%', height: '100%', objectFit: 'cover' }}
 																	alt="avatar"
 																/>
@@ -353,14 +378,14 @@ export const App = () => {
 														</Grid>
 														<Grid item xs={4}>
 															<Typography variant="h6" component="p">
-																{profile.metadata.gostiDisplayName}
+																{profile.metadata.slimeDisplayName}
 															</Typography>
 															<Typography variant="body2" component="p">
-																{profile.metadata.gostiBio}
+																{profile.metadata.slimeBio}
 															</Typography>
 														</Grid>
 														<Grid item xs={4}>
-															{JSON.parse(profile.metadata.gostiLinks || '[]').map((link: SocialLink) => (
+															{JSON.parse(profile.metadata.slimeLinks || '[]').map((link: SocialLink) => (
 																<Button key={link.name} href={link.link} target="_blank" component="a">
 																	{link.name}
 																</Button>
@@ -446,30 +471,15 @@ export const App = () => {
 					</AccordionSummary>
 					<AccordionDetails>
 						<Grid container spacing={3}>
-							{gostiConfig.marketplaces.map((marketplace) => (
+							{slimeConfig?.marketplaces.map((marketplace) => (
 								<Grid item xs={12} sm={12} md={6} xl={4}>
-									<Paper
-										elevation={3}
-										key={marketplace.displayName}
-										sx={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-									>
-										<Stack>
-											<Typography variant="h6">{marketplace.displayName}</Typography>
-											<Typography variant="body2">{marketplace.url}</Typography>
-										</Stack>
-										<Tooltip title="Delete">
-											<IconButton
-												size="large"
-												aria-label="delete"
-												onClick={() => {
-													gostiConfig.marketplaces = gostiConfig.marketplaces.filter((m) => m.url !== marketplace.url);
-													setGostiConfig({ ...gostiConfig });
-												}}
-											>
-												<DeleteForeverIcon />
-											</IconButton>
-										</Tooltip>
-									</Paper>
+									<MarketplaceDisplay
+										marketplace={marketplace}
+										onDelete={() => {
+											slimeConfig.marketplaces = slimeConfig.marketplaces.filter((m) => m.url !== marketplace.url);
+											setSlimeConfig({ ...slimeConfig });
+										}}
+									/>
 								</Grid>
 							))}
 							<Grid item xs={12} sm={12} md={6} xl={4}>
@@ -497,30 +507,15 @@ export const App = () => {
 					</AccordionSummary>
 					<AccordionDetails>
 						<Grid container spacing={3}>
-							{gostiConfig.nostrRelays.map((nostrRelay) => (
+							{slimeConfig?.nostrRelays.map((nostrRelay) => (
 								<Grid item xs={12} sm={12} md={6} xl={4}>
-									<Paper
-										elevation={3}
-										key={nostrRelay.url}
-										sx={{ height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-									>
-										<Stack>
-											<Typography variant="h6">{nostrRelay.displayName}</Typography>
-											<Typography variant="body2">{nostrRelay.url}</Typography>
-										</Stack>
-										<Tooltip title="Delete">
-											<IconButton
-												size="large"
-												aria-label="delete"
-												onClick={() => {
-													gostiConfig.marketplaces = gostiConfig.marketplaces.filter((m) => m.url !== nostrRelay.url);
-													setGostiConfig({ ...gostiConfig });
-												}}
-											>
-												<DeleteForeverIcon />
-											</IconButton>
-										</Tooltip>
-									</Paper>
+									<NostrRelayDisplay
+										relay={nostrRelay}
+										onDelete={() => {
+											slimeConfig.nostrRelays = slimeConfig.nostrRelays.filter((m) => m.url !== nostrRelay.url);
+											setSlimeConfig({ ...slimeConfig });
+										}}
+									/>
 								</Grid>
 							))}
 							<Grid item xs={12} sm={12} md={6} xl={4}>
@@ -554,10 +549,15 @@ export const App = () => {
 									label="Install Path"
 									variant="outlined"
 									fullWidth
-									value={gostiConfig.installsPath}
+									value={slimeConfig?.installsPath}
 									onChange={(e) => {
-										gostiConfig.installsPath = e.target.value;
-										setGostiConfig({ ...gostiConfig });
+										if (!slimeConfig) {
+											console.log('No slimeConfig found');
+											alert('No slimeConfig found. Please set up your profile.');
+											return;
+										}
+										slimeConfig.installsPath = e.target.value;
+										setSlimeConfig({ ...slimeConfig });
 									}}
 								/>
 							</Grid>
@@ -567,10 +567,15 @@ export const App = () => {
 									label="Data Path"
 									variant="outlined"
 									fullWidth
-									value={gostiConfig.mediaDataPath}
+									value={slimeConfig?.mediaDataPath}
 									onChange={(e) => {
-										gostiConfig.mediaDataPath = e.target.value;
-										setGostiConfig({ ...gostiConfig });
+										if (!slimeConfig) {
+											console.log('No slimeConfig found');
+											alert('No slimeConfig found. Please set up your profile.');
+											return;
+										}
+										slimeConfig.mediaDataPath = e.target.value;
+										setSlimeConfig({ ...slimeConfig });
 									}}
 								/>
 							</Grid>
@@ -580,16 +585,22 @@ export const App = () => {
 									label="Torrents Path"
 									variant="outlined"
 									fullWidth
-									value={gostiConfig.torrentsPath}
+									value={slimeConfig?.torrentsPath}
 									onChange={(e) => {
-										gostiConfig.torrentsPath = e.target.value;
-										setGostiConfig({ ...gostiConfig });
+										if (!slimeConfig) {
+											console.log('No slimeConfig found');
+											alert('No slimeConfig found. Please set up your profile.');
+											return;
+										}
+										slimeConfig.torrentsPath = e.target.value;
+										setSlimeConfig({ ...slimeConfig });
 									}}
 								/>
 							</Grid>
 						</Grid>
 					</AccordionDetails>
 				</Accordion>
+				<code>{JSON.stringify(slimeConfig, null, 4)}</code>
 			</Stack>
 
 			<FeeDialogModal

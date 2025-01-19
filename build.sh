@@ -1,2 +1,2 @@
 yarn build
-cp -a ./build/. ../gosti-client-tauri/resources/apps/gosti-settings-app/
+cp -a ./build/. ../slime-client-tauri/resources/apps/slime-settings-app/

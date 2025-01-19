@@ -1,1 +1,1 @@
-# gosti-library-dapp
+# slime-library-dapp

@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 import { SessionTypes } from '@walletconnect/types';
 import React from 'react';
 
-import WalletConnectMenu from '../gosti-shared/components/WalletConnectMenu';
+import WalletConnectMenu from '../slime-shared/components/WalletConnectMenu';
 import ThemeSwitcher from './ThemeSwitcher';
 
 export const MainTopBar = (

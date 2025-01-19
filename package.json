@@ -1,9 +1,9 @@
 {
-	"name": "gosti-client",
+	"name": "slime-settings",
 	"version": "0.1.0",
-	"author": "Gaerax <gaerax@gmail.com>",
+	"author": "Slime <networkofslime@gmail.com>",
 	"license": "Apache-2.0",
-	"description": "Gosti Library",
+	"description": "Slime Settings",
 	"private": true,
 	"homepage": "./",
 	"dependencies": {
