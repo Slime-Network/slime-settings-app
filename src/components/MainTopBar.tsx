@@ -77,7 +77,11 @@ export const MainTopBar = (
 					>
 						<RefreshIcon />
 					</IconButton>
-					<Box sx={{ display: { xs: 'flex' } }}>{WalletConnectMenu(session, connectToWallet, disconnectFromWallet)}</Box>
+					<WalletConnectMenu
+						session={session}
+						connectToWallet={connectToWallet}
+						disconnectFromWallet={disconnectFromWallet}
+					/>
 				</Toolbar>
 			</AppBar>
 			{renderMainMenu}

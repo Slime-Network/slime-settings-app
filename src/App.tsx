@@ -32,11 +32,11 @@ import { AddMarketplaceModal } from './slime-shared/components/AddMarketplaceMod
 import { AddRelayModal } from './slime-shared/components/AddRelayModal';
 import { AddTorrentPathModal } from './slime-shared/components/AddTorrentPathModal';
 import { FeeDialogModal } from './slime-shared/components/FeeDialogModal';
+import { infoModalStyle } from './slime-shared/components/InfoModal';
 import { MarketplaceDisplay } from './slime-shared/components/MarketplaceDisplay';
 import { NostrRelayDisplay } from './slime-shared/components/NostrRelayDisplay';
 import { ProfileEditPage } from './slime-shared/components/ProfileEditPage';
 import { XchDisplay } from './slime-shared/components/XchDisplay';
-import { infoModalStyle } from './slime-shared/constants';
 import { SocialLink } from './slime-shared/constants/social-links';
 import { useSlimeApi } from './slime-shared/contexts/SlimeApiContext';
 import { useWalletConnect } from './slime-shared/contexts/WalletConnectContext';
@@ -654,7 +654,6 @@ export const App = () => {
 						</Grid>
 					</AccordionDetails>
 				</Accordion>
-				<code>{JSON.stringify(slimeConfig, null, 4)}</code>
 			</Stack>
 
 			<FeeDialogModal
